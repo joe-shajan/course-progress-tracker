@@ -2,11 +2,13 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 
 type Lesson = {
+  _id: string;
   lessonTitle: string;
   isComplete: boolean;
 };
 
 type Chapter = {
+  _id: string;
   chapter: string;
   chapterOrder: number;
   lessons: Lesson[];
@@ -16,18 +18,46 @@ type ChaptersData = Chapter[];
 
 export default function Home() {
   const [chapters, setChapters] = useState<ChaptersData>([]);
-  const createTest = async () => {
-    const res = await fetch("/api/chapter/get");
-    const data = await res.json();
 
-    setChapters(data.data);
+  const fetchData = async () => {
+    try {
+      const res = await fetch("/api/chapter/get");
+      const data = await res.json();
+
+      setChapters(data.data);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   useEffect(() => {
-    createTest();
+    fetchData();
   }, []);
 
-  console.log(chapters);
+  const handleCheck = async (
+    checked: boolean,
+    chapterID: string,
+    lessonID: string
+  ) => {
+    try {
+      const res = await fetch("/api/chapter/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chapterID,
+          lessonID,
+          isComplete: checked,
+        }),
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div>
       <Head>
@@ -37,16 +67,22 @@ export default function Home() {
       </Head>
 
       <main className="p-6">
-        {chapters.map(({ chapter, chapterOrder, lessons }) => (
-          <div key={chapter}>
+        {chapters.map(({ chapter, chapterOrder, lessons, _id: chapterID }) => (
+          <div key={chapterID}>
             <h2 className="text-2xl font-bold">
               {chapterOrder}. {chapter}
             </h2>
 
-            {lessons.map(({ lessonTitle, isComplete }) => (
-              <div key={lessonTitle} className="flex gap-2 ml-6">
-                <input type="checkbox" checked={isComplete} />
-                <h4>{lessonTitle}</h4>
+            {lessons.map(({ lessonTitle, isComplete, _id: lessonID }) => (
+              <div key={lessonID} className="flex gap-2 ml-6">
+                <input
+                  type="checkbox"
+                  checked={isComplete}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleCheck(e.target.checked, chapterID, lessonID)
+                  }
+                />
+                <h4 className="text-lg">{lessonTitle}</h4>
               </div>
             ))}
           </div>

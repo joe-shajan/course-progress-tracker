@@ -6,36 +6,34 @@ import type { NextApiRequest, NextApiResponse } from "next";
  * @param {import('next').NextApiResponse} res
  */
 
-export default async function getChapters(
+export default async function updateChapters(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
     await connectMongo();
-    console.log("creating document");
 
-    // for (let chapter of chaptersArray) {
-    //   await Chapter.create(chapter);
-    // }
-    console.log("CREATED DOCUMENT");
+    const { chapterID, lessonID, isComplete } = req.body;
 
-    res.send("success");
+    try {
+      await Chapter.updateOne(
+        {
+          _id: chapterID,
+          "lessons._id": lessonID,
+        },
+        {
+          $set: {
+            "lessons.$.isComplete": isComplete,
+          },
+        }
+      );
+
+      res.send("success");
+    } catch (error) {
+      res.send("error");
+    }
   } catch (error) {
     console.log(error);
     res.json({ error });
   }
 }
-
-// Course.updateOne(
-//     {
-//       title: 'Epic React',
-//       'lessons.lessonTitle': 'Welcome to Epic React',
-//     },
-//     {
-//       $set: {
-//         'lessons.$.isComplete': true,
-//       },
-//     }
-//   )
-//     .then(() => console.log('Update successful'))
-//     .catch((err) => console.error(err));

@@ -14,7 +14,6 @@ export default async function getChapters(
     await connectMongo();
 
     let data = await Chapter.find().sort({ chapterOrder: 1 });
-
     res.json({ data });
   } catch (error) {
     console.log(error);
