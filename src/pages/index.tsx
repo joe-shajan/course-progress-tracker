@@ -34,13 +34,37 @@ export default function Home() {
     fetchData();
   }, []);
 
+  const updateIsLessonComplete = (
+    checked: boolean,
+    chapterID: string,
+    lessonID: string
+  ) => {
+    setChapters((prev) => {
+      let tempPrev = [...prev];
+      tempPrev.forEach(({ lessons, _id }) => {
+        if (_id === chapterID) {
+          lessons.forEach((lesson) => {
+            if (lesson._id === lessonID) {
+              lesson.isComplete = checked;
+            }
+          });
+        }
+      });
+
+      return [...tempPrev];
+    });
+  };
+
   const handleCheck = async (
     checked: boolean,
     chapterID: string,
     lessonID: string
   ) => {
     try {
-      const res = await fetch("/api/chapter/update", {
+      // Optimistic UI update
+      updateIsLessonComplete(checked, chapterID, lessonID);
+
+      await fetch("/api/chapter/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
