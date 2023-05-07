@@ -18,13 +18,25 @@ type ChaptersData = Chapter[];
 
 export default function Home() {
   const [chapters, setChapters] = useState<ChaptersData>([]);
+  const [stats, setStats] = useState({ total: 0, completed: 0 });
 
   const fetchData = async () => {
     try {
       const res = await fetch("/api/chapter/get");
-      const data = await res.json();
+      const data = (await res.json()) as { data: ChaptersData };
 
       setChapters(data.data);
+
+      let total = 0;
+      let completed = 0;
+      data.data.forEach(({ lessons }) => {
+        lessons.forEach(({ isComplete }) => {
+          if (isComplete) completed++;
+          total++;
+        });
+      });
+
+      setStats({ total, completed });
     } catch (error) {
       console.error(error);
     }
@@ -92,37 +104,59 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="p-6">
-        {chapters.map(({ chapter, chapterOrder, lessons, _id: chapterID }) => (
-          <div key={chapterID}>
-            <h2 className="text-2xl font-bold text-slate-800">
-              {chapterOrder}. {chapter}
-            </h2>
+      <main className="p-6 flex">
+        <div className="w-[70%]">
+          {chapters.map(
+            ({ chapter, chapterOrder, lessons, _id: chapterID }) => (
+              <div key={chapterID}>
+                <h2 className="text-3xl my-2 text-slate-700">
+                  {chapterOrder}. {chapter}
+                </h2>
 
-            {lessons.map(({ lessonTitle, isComplete, _id: lessonID }) => (
-              <div
-                key={lessonID}
-                className="flex w-fit grow-0 gap-2 ml-6 py-1 transition px-2 rounded-lg items-center hover:bg-slate-200"
-              >
-                <div className="flex items-center h-5">
-                  <input
-                    id="helper-checkbox"
-                    aria-describedby="helper-checkbox-text"
-                    type="checkbox"
-                    checked={isComplete}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleCheck(e.target.checked, chapterID, lessonID)
-                    }
-                    className="w-4 h-4 cursor-pointer text-blue-600 bg-gray-100 border-gray-300"
-                  />
-                </div>
-                <h4 className="text-lg text-slate-800">
-                  {++index}. {lessonTitle}
-                </h4>
+                {lessons.map(({ lessonTitle, isComplete, _id: lessonID }) => (
+                  <div
+                    key={lessonID}
+                    className="flex w-fit grow-0 gap-2 ml-6 py-1 transition px-2 rounded-lg items-center hover:bg-slate-200"
+                  >
+                    <div className="flex items-center h-5">
+                      <input
+                        id="helper-checkbox"
+                        aria-describedby="helper-checkbox-text"
+                        type="checkbox"
+                        checked={isComplete}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleCheck(e.target.checked, chapterID, lessonID)
+                        }
+                        className="w-4 h-4 cursor-pointer text-blue-600 bg-gray-100 border-gray-300"
+                      />
+                    </div>
+                    <h4 className="text-lg text-slate-800">
+                      {++index}. {lessonTitle}
+                    </h4>
+                  </div>
+                ))}
               </div>
-            ))}
+            )
+          )}
+        </div>
+        <aside className="w-[30%] fixed top-6 right-6 border-2 border-slate-200 rounded-2xl p-6">
+          <div className="flex justify-around">
+            <div className="bg-slate-100 rounded-lg text-slate-700 w-28 h-28 flex gap-2 justify-center items-center">
+              <h1 className="text-4xl">
+                {((stats.completed / stats.total) * 100).toFixed(1)}
+              </h1>
+              <span className="mt-3">%</span>
+            </div>
+            <div className="bg-slate-100 rounded-lg text-slate-700 w-28 h-28 flex flex-col gap-2 justify-center items-center">
+              <h1 className="text-4xl">{stats.total}</h1>
+              <p className="text-lg">Total</p>
+            </div>
+            <div className="bg-slate-100 rounded-lg text-slate-700 w-28 h-28 flex flex-col gap-2 justify-center items-center">
+              <h1 className="text-4xl">{stats.completed}</h1>
+              <p className="text-lg">Completed</p>
+            </div>
           </div>
-        ))}
+        </aside>
       </main>
     </div>
   );
