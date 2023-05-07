@@ -95,20 +95,28 @@ export default function Home() {
       <main className="p-6">
         {chapters.map(({ chapter, chapterOrder, lessons, _id: chapterID }) => (
           <div key={chapterID}>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold text-slate-800">
               {chapterOrder}. {chapter}
             </h2>
 
             {lessons.map(({ lessonTitle, isComplete, _id: lessonID }) => (
-              <div key={lessonID} className="flex gap-2 ml-6">
-                <input
-                  type="checkbox"
-                  checked={isComplete}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleCheck(e.target.checked, chapterID, lessonID)
-                  }
-                />
-                <h4 className="text-lg">
+              <div
+                key={lessonID}
+                className="flex w-fit grow-0 gap-2 ml-6 py-1 transition px-2 rounded-lg items-center hover:bg-slate-200"
+              >
+                <div className="flex items-center h-5">
+                  <input
+                    id="helper-checkbox"
+                    aria-describedby="helper-checkbox-text"
+                    type="checkbox"
+                    checked={isComplete}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleCheck(e.target.checked, chapterID, lessonID)
+                    }
+                    className="w-4 h-4 cursor-pointer text-blue-600 bg-gray-100 border-gray-300"
+                  />
+                </div>
+                <h4 className="text-lg text-slate-800">
                   {++index}. {lessonTitle}
                 </h4>
               </div>
