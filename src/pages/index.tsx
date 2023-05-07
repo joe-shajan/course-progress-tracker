@@ -82,6 +82,8 @@ export default function Home() {
     }
   };
 
+  let index = 0;
+
   return (
     <div>
       <Head>
@@ -106,7 +108,9 @@ export default function Home() {
                     handleCheck(e.target.checked, chapterID, lessonID)
                   }
                 />
-                <h4 className="text-lg">{lessonTitle}</h4>
+                <h4 className="text-lg">
+                  {++index}. {lessonTitle}
+                </h4>
               </div>
             ))}
           </div>
