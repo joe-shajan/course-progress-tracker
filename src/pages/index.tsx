@@ -143,7 +143,9 @@ export default function Home() {
           <div className="flex justify-around">
             <div className="bg-slate-100 rounded-lg text-slate-700 w-28 h-28 flex gap-2 justify-center items-center">
               <h1 className="text-4xl">
-                {((stats.completed / stats.total) * 100).toFixed(1)}
+                {stats.completed > 0
+                  ? ((stats.completed / stats.total) * 100).toFixed(1)
+                  : "0"}
               </h1>
               <span className="mt-3">%</span>
             </div>
