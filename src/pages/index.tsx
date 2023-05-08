@@ -127,10 +127,14 @@ export default function Home() {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleCheck(e.target.checked, chapterID, lessonID)
                         }
-                        className="w-4 h-4 cursor-pointer text-blue-600 bg-gray-100 border-gray-300"
+                        className="w-4 h-4 cursor-pointer accent-slate-900  bg-slate-900 text-slate-900  border-gray-300"
                       />
                     </div>
-                    <h4 className="text-lg text-slate-800">
+                    <h4
+                      className={`text-lg text-slate-800 ${
+                        isComplete ? "line-through decoration-slate-500" : ""
+                      }`}
+                    >
                       {++index}. {lessonTitle}
                     </h4>
                   </div>
