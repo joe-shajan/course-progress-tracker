@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useQuery } from "@tanstack/react-query";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 
@@ -23,15 +24,13 @@ type Chapter = {
 type ChaptersData = Chapter[];
 
 export default function Home() {
-  const [chapters, setChapters] = useState<ChaptersData>([]);
   const [stats, setStats] = useState({ total: 0, completed: 0 });
 
-  const fetchData = async () => {
-    try {
+  const { isLoading, error, data, refetch } = useQuery({
+    queryKey: ["chapters"],
+    queryFn: async () => {
       const res = await fetch("/api/chapter/get");
       const data = (await res.json()) as { data: ChaptersData };
-
-      setChapters(data.data);
 
       let total = 0;
       let completed = 0;
@@ -43,35 +42,32 @@ export default function Home() {
       });
 
       setStats({ total, completed });
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+      return data;
+    },
+    select: (res) => res.data,
+  });
 
-  const updateIsLessonComplete = (
-    checked: boolean,
-    chapterID: string,
-    lessonID: string
-  ) => {
-    setChapters((prev) => {
-      let tempPrev = [...prev];
-      tempPrev.forEach(({ lessons, _id }) => {
-        if (_id === chapterID) {
-          lessons.forEach((lesson) => {
-            if (lesson._id === lessonID) {
-              lesson.isComplete = checked;
-            }
-          });
-        }
-      });
+  // const updateIsLessonComplete = (
+  //   checked: boolean,
+  //   chapterID: string,
+  //   lessonID: string
+  // ) => {
+  //   setChapters((prev) => {
+  //     let tempPrev = [...prev];
+  //     tempPrev.forEach(({ lessons, _id }) => {
+  //       if (_id === chapterID) {
+  //         lessons.forEach((lesson) => {
+  //           if (lesson._id === lessonID) {
+  //             lesson.isComplete = checked;
+  //           }
+  //         });
+  //       }
+  //     });
 
-      return [...tempPrev];
-    });
-  };
+  //     return [...tempPrev];
+  //   });
+  // };
 
   const handleCheck = async (
     checked: boolean,
@@ -80,7 +76,7 @@ export default function Home() {
   ) => {
     try {
       // Optimistic UI update
-      updateIsLessonComplete(checked, chapterID, lessonID);
+      // updateIsLessonComplete(checked, chapterID, lessonID);
 
       await fetch("/api/chapter/update", {
         method: "PUT",
@@ -94,13 +90,15 @@ export default function Home() {
         }),
       });
 
-      fetchData();
+      refetch();
     } catch (error) {
       console.error(error);
     }
   };
 
   let index = 0;
+
+  if (error) return <div>could not fetch data</div>;
 
   return (
     <div>
@@ -112,54 +110,43 @@ export default function Home() {
 
       <main className="p-6 flex">
         <div className="w-[60%]">
+          {isLoading && <h1>Loading...</h1>}
           <Accordion type="single" collapsible className="w-full">
-            {chapters.map(
-              ({ chapter, chapterOrder, lessons, _id: chapterID }) => (
-                <AccordionItem key={chapterID} value={chapterID}>
-                  <AccordionTrigger>
-                    {chapterOrder}. {chapter}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    {lessons.map(
-                      ({ lessonTitle, isComplete, _id: lessonID }) => (
-                        <div
-                          key={lessonID}
-                          className="flex w-fit grow-0 gap-2 ml-6 py-1 transition px-2 rounded-lg items-center hover:bg-slate-200"
-                        >
-                          <div className="flex items-center h-5">
-                            <input
-                              id="helper-checkbox"
-                              aria-describedby="helper-checkbox-text"
-                              type="checkbox"
-                              checked={isComplete}
-                              onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
-                              ) =>
-                                handleCheck(
-                                  e.target.checked,
-                                  chapterID,
-                                  lessonID
-                                )
-                              }
-                              className="w-4 h-4 cursor-pointer accent-slate-900  bg-slate-900 text-slate-900  border-gray-300"
-                            />
-                          </div>
-                          <h4
-                            className={`text-base text-slate-800 ${
-                              isComplete
-                                ? "line-through decoration-slate-500"
-                                : ""
-                            }`}
-                          >
-                            {++index}. {lessonTitle}
-                          </h4>
-                        </div>
-                      )
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              )
-            )}
+            {data?.map(({ chapter, chapterOrder, lessons, _id: chapterID }) => (
+              <AccordionItem key={chapterID} value={chapterID}>
+                <AccordionTrigger>
+                  {chapterOrder}. {chapter}
+                </AccordionTrigger>
+                <AccordionContent>
+                  {lessons.map(({ lessonTitle, isComplete, _id: lessonID }) => (
+                    <div
+                      key={lessonID}
+                      className="flex w-fit grow-0 gap-2 ml-6 py-1 transition px-2 rounded-lg items-center hover:bg-slate-200"
+                    >
+                      <div className="flex items-center h-5">
+                        <input
+                          id="helper-checkbox"
+                          aria-describedby="helper-checkbox-text"
+                          type="checkbox"
+                          checked={isComplete}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            handleCheck(e.target.checked, chapterID, lessonID)
+                          }
+                          className="w-4 h-4 cursor-pointer accent-slate-900  bg-slate-900 text-slate-900  border-gray-300"
+                        />
+                      </div>
+                      <h4
+                        className={`text-base text-slate-800 ${
+                          isComplete ? "line-through decoration-slate-500" : ""
+                        }`}
+                      >
+                        {++index}. {lessonTitle}
+                      </h4>
+                    </div>
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         </div>
         <aside className="w-[30%] fixed top-6 right-6 border-2 border-slate-200 rounded-2xl p-6">
