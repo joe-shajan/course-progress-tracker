@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 
@@ -24,76 +24,68 @@ type Chapter = {
 type ChaptersData = Chapter[];
 
 export default function Home() {
+  const queryClient = useQueryClient();
+
   const [stats, setStats] = useState({ total: 0, completed: 0 });
 
-  const { isLoading, error, data, refetch } = useQuery({
+  const updateStats = (data: ChaptersData) => {
+    let total = 0;
+    let completed = 0;
+    data.forEach(({ lessons }) => {
+      lessons.forEach(({ isComplete }) => {
+        if (isComplete) completed++;
+        total++;
+      });
+    });
+
+    setStats({ total, completed });
+  };
+
+  const { isLoading, error, data } = useQuery({
     queryKey: ["chapters"],
     queryFn: async () => {
       const res = await fetch("/api/chapter/get");
       const data = (await res.json()) as { data: ChaptersData };
 
-      let total = 0;
-      let completed = 0;
-      data.data.forEach(({ lessons }) => {
-        lessons.forEach(({ isComplete }) => {
-          if (isComplete) completed++;
-          total++;
-        });
-      });
-
-      setStats({ total, completed });
+      updateStats(data.data);
 
       return data;
     },
     select: (res) => res.data,
   });
 
-  // const updateIsLessonComplete = (
-  //   checked: boolean,
-  //   chapterID: string,
-  //   lessonID: string
-  // ) => {
-  //   setChapters((prev) => {
-  //     let tempPrev = [...prev];
-  //     tempPrev.forEach(({ lessons, _id }) => {
-  //       if (_id === chapterID) {
-  //         lessons.forEach((lesson) => {
-  //           if (lesson._id === lessonID) {
-  //             lesson.isComplete = checked;
-  //           }
-  //         });
-  //       }
-  //     });
+  type UpdatedItem = {
+    chapterID: string;
+    lessonID: string;
+    checked: boolean;
+  };
 
-  //     return [...tempPrev];
-  //   });
-  // };
-
-  const handleCheck = async (
-    checked: boolean,
-    chapterID: string,
-    lessonID: string
-  ) => {
-    try {
-      // Optimistic UI update
-      // updateIsLessonComplete(checked, chapterID, lessonID);
-
-      await fetch("/api/chapter/update", {
+  const mutation = useMutation({
+    mutationFn: (updatedItem: UpdatedItem) => {
+      return fetch("/api/chapter/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          chapterID,
-          lessonID,
-          isComplete: checked,
+          chapterID: updatedItem.chapterID,
+          lessonID: updatedItem.lessonID,
+          isComplete: updatedItem.checked,
         }),
       });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ["chapters"] });
+    },
+  });
 
-      refetch();
-    } catch (error) {
-      console.error(error);
-    }
+  const handleCheck = (
+    checked: boolean,
+    chapterID: string,
+    lessonID: string
+  ) => {
+    mutation.mutate({ chapterID, lessonID, checked });
   };
 
   let index = 0;
