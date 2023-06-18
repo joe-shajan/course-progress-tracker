@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -102,7 +103,12 @@ export default function Home() {
 
       <main className="p-6 flex">
         <div className="w-[60%]">
-          {isLoading && <h1>Loading...</h1>}
+          {isLoading &&
+            new Array(10)
+              .fill(1)
+              .map((k) => (
+                <Skeleton key={k} className="w-full h-[40px] rounded-sm mt-4" />
+              ))}
           <Accordion type="single" collapsible className="w-full">
             {data?.map(({ chapter, chapterOrder, lessons, _id: chapterID }) => (
               <AccordionItem key={chapterID} value={chapterID}>
